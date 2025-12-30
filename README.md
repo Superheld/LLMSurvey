@@ -84,19 +84,101 @@ Das Projekt verfolgt folgende technische Lernziele:
 - **Pandas & Plotly:** Datenanalyse und Charts
 
 ### Datenbank-Schema
-- `questions`: 29 Survey-Fragen mit Metadaten
-- `strategies`: 3 Prompt-Strategien mit System- und Conversation-Prompts
-- `responses`: Einzelne LLM-Antworten mit Zuordnung zu Strategie und Frage
+```
+questions:   id, label, text, block
+strategies:  id, name, system_path, message_path
+models:      id, model_id, provider, name
+responses:   id, model_id, strategy_id, question_id, answer
+```
+
+**Beziehungen:**
+- `responses.model_id` → `models.id`
+- `responses.strategy_id` → `strategies.id`
+- `responses.question_id` → `questions.id`
+
+## Setup & Installation
+
+### Voraussetzungen
+- Python 3.13+
+- API Keys für gewünschte LLM-Provider (Mistral, OpenAI, Anthropic, Gemini, DeepSeek)
+
+### Installation
+
+1. **Repository klonen**
+   ```bash
+   git clone https://github.com/Superheld/LLMSurvey.git
+   cd LLMSurvey
+   ```
+
+2. **Dependencies installieren**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Environment-Variablen setzen**
+
+   Erstelle eine `.env` Datei im Projekt-Root mit deinen API Keys:
+   ```bash
+   MISTRAL_API_KEY=your_key_here
+   OPENAI_API_KEY=your_key_here
+   ANTHROPIC_API_KEY=your_key_here
+   GEMINI_API_KEY=your_key_here
+   DEEPSEEK_API_KEY=your_key_here
+   ```
+
+4. **Datenbank initialisieren**
+   ```bash
+   # Führe die Setup-Notebooks in setup/ der Reihe nach aus:
+   # 1. sqlite_1-schema.ipynb
+   # 2. sqlite_2-questions.ipynb
+   # 3. sqlite_3-models.ipynb
+   # 4. sqlite_4-strategies.ipynb
+   ```
+
+### Verwendung
+
+**Survey durchführen:**
+```bash
+# Öffne survey/oneshot.ipynb
+# Wähle Models in der models_to_test Liste
+# Führe alle Zellen aus
+```
+
+**Ergebnisse auswerten:**
+```bash
+# Öffne survey/evaluation.ipynb
+# Führe alle Zellen aus für tabellarische Übersicht
+```
 
 ## Status
 
-**Aktuell:** MVP in Entwicklung
-- ✅ Fragebogen validiert und dokumentiert
-- ✅ Datenbank-Schema erstellt
-- ✅ LiteLLM-Integration getestet
-- ⏳ Survey-Runner in Entwicklung
-- ⏳ Scoring-Logik
-- ⏳ Streamlit-Dashboard
+**Aktuell:** MVP Core funktionsfähig ✅
+
+### Implementiert
+- ✅ Fragebogen validiert (29 Items über 6 thematische Blöcke)
+- ✅ Datenbank-Schema mit 4 Tabellen
+- ✅ Setup-Notebooks für Datenbankinitialisierung
+- ✅ Response Format mit Pydantic für JSON Schema Enforcement
+- ✅ **Oneshot-Modus** vollständig implementiert (DB → LiteLLM → DB)
+- ✅ **Scoring-Pipeline** funktional (10 Sinus-Milieus mit gewichteter Matrix)
+- ✅ **Evaluation-Notebook** mit tabellarischem Output
+- ✅ 10 Models definiert (Mistral, OpenAI, Anthropic, Gemini, DeepSeek - je 2)
+- ✅ 6 Strategien definiert (3 Modi × 2 Framings)
+
+### In Arbeit
+- ⏳ Conversation-Modus implementieren
+- ⏳ QuestionByQuestion-Modus implementieren
+- ⏳ Visualisierungen (Heatmaps, Radar Charts, Antwortmuster)
+- ⏳ Streamlit Dashboard
+- ⏳ Multi-Model Testing (API Accounts aufladen)
+- ⏳ Behavior Shift Analysis (none vs test framing)
+
+### Erste Erkenntnisse
+- **3 Models getestet:** Mistral Small, Mistral Large, Gemini Flash
+- **Strategie:** oneshot_none (ohne Test-Framing)
+- **Ergebnis:** Alle Models → **Adaptiv-Pragmatische** (moderate, ausgewogene Antworten)
+- **Interpretation:** Typisch für LLMs - keine extremen Positionen, niedrige Varianz, "sichere" Mittelwerte
+- **Nächster Schritt:** Mehr Models testen und Test-Framing vergleichen um Shifts zu identifizieren
 
 ## Lizenz & Nutzung
 
