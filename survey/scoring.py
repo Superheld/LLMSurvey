@@ -5,6 +5,8 @@ Sinus-Milieu Scoring Profiles
 Vollständige Item-Gewichtungen und Erwartungswerte für alle 10 deutschen Sinus-Milieus.
 Basierend auf Sinus-Institut Charakteristika und akademischer Literatur.
 
+Made by Claude
+
 Verwendung:
 -----------
 from sinus_scoring_profiles import SINUS_MILIEU_PROFILES
