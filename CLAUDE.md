@@ -21,12 +21,14 @@
 - ✅ **Kann ich:** Code halbwegs flüssig schreiben
 - ✅ **Kann ich:** Mit kleinen, lokalen Deep-Learning-Models arbeiten
 - ✅ **Kann ich:** LLM APIs (OpenAI, Anthropic, etc.)
-- ⚠️ **Lerne gerade:** Typen-Systeme (type hints)
-- ⚠️ **Lerne gerade:** Schemas (Pydantic, JSON Schema, etc.)
-- ⚠️ **Lerne gerade:** Ein/Ausgaben verschiedener Libraries verstehen
+- ✅ **Kann ich:** SQLite Datenbanken (CRUD, Foreign Keys, AUTOINCREMENT)
+- ✅ **Kann ich:** Pydantic BaseModels für JSON Schema Generation
+- ✅ **Kann ich:** LiteLLM mit response_format für strukturierte Outputs
+- ⚠️ **Lerne gerade:** Typen-Systeme (type hints) - besser geworden!
+- ⚠️ **Lerne gerade:** Schemas (Pydantic, JSON Schema) - praktische Erfahrung!
+- ⚠️ **Lerne gerade:** Pandas & Visualisierungen (Matplotlib, Seaborn, Plotly)
 - ⚠️ **Lerne gerade:** Streamlit
 - ❌ **Kann ich nicht:** Models trainieren (weder Hardware noch Erfahrung)
-- ❌ **Neu für mich:** LiteLLM
 
 ### Was ich schon gemacht habe
 - Deep Learning Models **angewendet** (nicht trainiert!)
@@ -96,19 +98,43 @@
 
 ## Projekt-Kontext: Sinus-Milieu Survey
 
-### Was ich schon habe
-- ✅ 29-Item Fragebogen (validiert) in `fragen_v1.1.md`
-- ✅ Item-Mapping Matrix in `item_mapping.md`
-- ✅ Scoring-Code (Python) in `scoring.md`
-- ✅ PRD (vereinfachte MVP-Version)
+### Was bereits implementiert ist ✅
+- ✅ **Datenbank:** SQLite mit 4 Tabellen (questions, strategies, models, responses)
+- ✅ **Setup Notebooks:** Schema, Questions, Models, Strategies in DB laden
+- ✅ **Response Format:** Pydantic Models für JSON Schema enforcement
+- ✅ **Oneshot Implementation:** Vollständiger Workflow (DB → LiteLLM → DB)
+- ✅ **Scoring:** Sinus-Milieu Algorithmus in `survey/scoring.py`
+- ✅ **Evaluation:** Notebook für Auswertung und Vergleich
+- ✅ **6 Strategien:** oneshot/conversation/questionbyquestion × none/test framing
+- ✅ **Minimal Prompts:** Schema descriptions statt prompt instructions
+- ✅ **10 Models definiert:** Mistral, OpenAI, Anthropic, Gemini, DeepSeek (je 2)
 
-### Was ich bauen will (MVP)
-1. **Survey-Runner:** LLMs mit 29 Fragen befragen
-2. **3 Prompt-Strategien:** One-Shot, Conversation, Step-by-Step
-3. **Multi-Provider:** Viele verschiedene LLMs testen
-4. **Datenbank:** SQLite (2 Tabellen: runs + responses)
-5. **Scoring:** Milieu-Zuordnung berechnen
-6. **Dashboard:** Streamlit-UI für Visualisierung
+### Technische Details
+**Datenbank-Schema:**
+```
+questions:   id, label, text, block
+strategies:  id, name, system_path, message_path
+models:      id, model_id, provider, name
+responses:   id, model_id, strategy_id, question_id, answer
+```
+
+**LiteLLM Integration:**
+- response_format mit JSON Schema via Pydantic
+- Provider prefixes (mistral/, openai/, anthropic/, gemini/, deepseek/)
+- Strukturierte Outputs: {answers: [{question: int, answer: 1-4}, ...]}
+
+**Scoring Pipeline:**
+1. Responses aus DB laden (question_id → answer Dict)
+2. scoring.calculate_all_milieu_scores(responses)
+3. scoring.get_primary_milieu(all_scores)
+4. Output: Primary Milieu, Probability, Confidence
+
+**Was noch fehlt (MVP):**
+1. ⏳ Conversation & QuestionByQuestion Modi implementieren
+2. ⏳ Test-Framing Strategie testen (Behavior Shift Analysis)
+3. ⏳ Mehr Models befragen (aktuell: 3 Models × 1 Strategy)
+4. ⏳ Visualisierungen (Heatmaps, Radar Charts, Antwortmuster)
+5. ⏳ Streamlit Dashboard
 
 ### Warum dieses Projekt?
 - **Lernziel 1:** LiteLLM & Multi-Provider-Integration verstehen
@@ -254,14 +280,18 @@ def ask(q): return int(re.search(r'\d', litellm.completion(model="gpt-4o", messa
 ## Meine Erwartungen an dieses Projekt
 
 ### Was ich erreichen will (MVP)
-- [ ] **Technisch:** 5+ LLMs erfolgreich befragen
-- [ ] **Technisch:** 3 Prompt-Strategien implementiert
-- [ ] **Technisch:** Daten in SQLite gespeichert
+- [x] **Technisch:** Daten in SQLite gespeichert ✅
+- [x] **Technisch:** 3 Prompt-Strategien definiert (6 mit Framings) ✅
+- [x] **Lernen:** LiteLLM verstanden & kann es nutzen ✅
+- [x] **Lernen:** SQLite & Datenmanagement verinnerlicht ✅
+- [x] **Lernen:** Pydantic & JSON Schemas praktisch angewandt ✅
+- [ ] **Technisch:** 5+ LLMs erfolgreich befragen (aktuell: 3)
+- [ ] **Technisch:** Alle 3 Modi implementiert (aktuell: nur oneshot)
+- [ ] **Technisch:** Behavior Shift Analysis (none vs test framing)
+- [ ] **Technisch:** Visualisierungen (Heatmaps, Radar Charts)
 - [ ] **Technisch:** Streamlit Dashboard läuft
-- [ ] **Lernen:** LiteLLM verstanden & kann es nutzen
 - [ ] **Lernen:** Streamlit Basics verstanden
 - [ ] **Lernen:** Prompt Engineering praktisch erprobt
-- [ ] **Lernen:** SQLite & Datenmanagement verinnerlicht
 
 ### Was NICHT Ziel ist (jetzt)
 - ❌ Production-ready Code
@@ -298,6 +328,6 @@ def ask(q): return int(re.search(r'\d', litellm.completion(model="gpt-4o", messa
 
 ---
 
-**Letzte Aktualisierung:** 2025-12-28
-**Projekt-Phase:** Planning → Ready to start coding
-**Nächster Schritt:** Step 1 - Setup & Erste Befragung
+**Letzte Aktualisierung:** 2025-12-30
+**Projekt-Phase:** MVP Development - Oneshot implementiert, Evaluation läuft
+**Nächster Schritt:** API Accounts aufladen → Mehr Models befragen → Visualisierungen hinzufügen
