@@ -5,6 +5,9 @@
 Dieses Projekt ist ein **Lernexperiment**, das untersucht wie verschiedene Large Language Models (LLMs), mehrfach mit unterschiedlichen Promptstrategien angesprochen, auf einen standardisierten Fragebogen zur Sinus-Milieu-Zuordnung reagieren.
 
 **Wichtig:** Dieses Projekt dient ausschließlich dem Lernen und Experimentieren. Die Ergebnisse sind in keiner Weise repräsentativ oder wissenschaftlich valide. Es geht nicht darum, belastbare Aussagen über LLMs oder Sinus-Milieus zu treffen, sondern darum, praktische Erfahrungen mit verschiedenen Technologien zu sammeln. 
+
+**Hinweis:** Das Projekt wurde mit Hilfe von Claude Code erstellt. In der Regel habe ich den Code geschrieben und Claude war mein "Forum". Beim Setup hat er weite Teile geschrieben. In der Regel ist es an den Kommentaren (englisch vs. deutsch) erkennbar ;-)
+
 ## Lernziele
 
 Das Projekt verfolgt folgende technische Lernziele:
