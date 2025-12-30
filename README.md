@@ -2,9 +2,17 @@
 
 ## Projektziel
 
-Dieses Projekt ist ein **Lernexperiment**, das untersucht wie verschiedene Large Language Models (LLMs), mehrfach mit unterschiedlichen Promptstrategien angesprochen, auf einen standardisierten Fragebogen zur Sinus-Milieu-Zuordnung reagieren.
+Dieses Projekt ist ein **Lernexperiment**, das untersucht wie sich das Antwortverhalten verschiedener Large Language Models (LLMs) verändert, wenn sie unterschiedlich geframed werden.
 
-**Wichtig:** Dieses Projekt dient ausschließlich dem Lernen und Experimentieren. Die Ergebnisse sind in keiner Weise repräsentativ oder wissenschaftlich valide. Es geht nicht darum, belastbare Aussagen über LLMs oder Sinus-Milieus zu treffen, sondern darum, praktische Erfahrungen mit verschiedenen Technologien zu sammeln. 
+**Die zentrale Frage:** Zeigen LLMs "soziale Erwünschtheit" oder Behavior Shifts, wenn man ihnen explizit mitteilt, dass sie an einem Test teilnehmen?
+
+- **"Wie ist es"** (ohne Meta-Kontext): Natürliches Antwortverhalten basierend auf Trainingsdaten
+
+- **"Wie möchte es sein"** (Test-Framing): Verändert sich das Verhalten wenn das Model weiß "Das ist ein Test"?
+
+Das Sinus-Milieu-Framework dient dabei als strukturiertes Messinstrument, um Shifts im Antwortverhalten sichtbar zu machen – nicht um echte Milieus zu identifizieren.
+
+**Wichtig:** Dieses Projekt dient dem Lernen und Experimentieren. Die Ergebnisse sind nicht repräsentativ oder wissenschaftlich valide bezüglich echter Sinus-Milieus, können aber interessante Muster im Model-Verhalten aufzeigen. 
 
 **Hinweis:** Das Projekt wurde mit Hilfe von Claude Code erstellt. In der Regel habe ich den Code geschrieben und Claude war mein "Forum". Beim Setup hat er weite Teile geschrieben. In der Regel ist es an den Kommentaren (englisch vs. deutsch) erkennbar ;-)
 
@@ -13,7 +21,7 @@ Dieses Projekt ist ein **Lernexperiment**, das untersucht wie verschiedene Large
 Das Projekt verfolgt folgende technische Lernziele:
 
 - **LiteLLM & Multi-Provider-Integration:** Praktischer Umgang mit verschiedenen LLM-APIs (OpenAI, Anthropic, Mistral, Groq, DeepSeek, etc.) über eine einheitliche Schnittstelle
-- **Prompt Engineering:** Systematisches Experimentieren mit verschiedenen Prompt-Strategien (One-Shot, Conversation, Step-by-Step)
+- **Experimentelles Design:** Systematische Erfassung von Model-Behavior unter kontrollierten Bedingungen
 - **Streamlit:** Aufbau interaktiver Dashboards zur Datenvisualisierung
 - **Datenmanagement:** SQLite-Datenbankdesign und -verwaltung für experimentelle Daten
 - **Systematisches Experimentieren:** Strukturierte Erfassung und Auswertung von Multi-Model-Experimenten
@@ -22,11 +30,15 @@ Das Projekt verfolgt folgende technische Lernziele:
 
 ### Interessante Beobachtungen, die möglich sind:
 
-- **Prompt-Sensitivität:** Wie reagiert dasselbe Model auf unterschiedliche Prompt-Strategien? Schwanken die "Milieu-Zuordnungen" stark oder bleiben sie konsistent? Diese Variabilität ist ein Hinweis auf das "Innenleben" des Models.
+- **Behavior Shifts durch Meta-Prompts:** Verschiebt sich die "Milieu-Zuordnung" eines Models, wenn man explizit sagt "Das ist ein Test"? Gibt es messbare Unterschiede zwischen "natürlichem" Verhalten (ohne Framing) und "performativem" Verhalten (Test-Framing)?
 
-- **Model-Vergleiche:** Wie unterscheiden sich verschiedene Models bei identischen Prompts? Welche Patterns zeigen sich in Abhängigkeit von Trainingsdaten, Alignment-Strategien oder Modell-Architektur?
+- **Model-spezifische Shifts:** Reagieren verschiedene Models unterschiedlich stark auf Meta-Prompts? Zeigen sich systematische Unterschiede zwischen Providern (z.B. OpenAI vs. Anthropic vs. Mistral)?
 
-- **Systematisches LLM-Verhalten:** Gibt es konsistente Antworttendenzen über Models und Strategien hinweg? Zeigen sich Artefakte der Trainings- oder Alignment-Prozesse?
+- **Framing-Sensitivität:** Wie stark ist der Einfluss des Framings verglichen mit dem Einfluss des Befragungs-Modus (One-Shot vs. Conversation vs. Question-by-Question)?
+
+- **Konsistenz vs. Variabilität:** Ist der Shift reproduzierbar? Verhält sich ein Model konsistent über verschiedene Befragungs-Modi hinweg, oder ist das Verhalten instabil?
+
+**Das könnte beweisen:** Dass LLMs unterschiedliches Verhalten zeigen abhängig vom Meta-Kontext – nicht dass sie echte soziale Milieus repräsentieren, sondern dass sie auf den Kontext "Test" vs. "kein Test" reagieren.
 
 ### Was dieses Projekt NICHT liefert:
 
@@ -47,12 +59,21 @@ Das Projekt verfolgt folgende technische Lernziele:
 - 4-stufige Antwortskala (1 = stimme überhaupt nicht zu, 4 = stimme voll und ganz zu)
 - Mapping auf 10 Sinus-Milieus über gewichtete Scoring-Matrix
 
-### Prompt-Strategien
-Das Projekt testet drei verschiedene Befragungsansätze:
+### Experimentelles Design
 
-1. **One-Shot:** Alle 29 Fragen in einem einzigen Prompt
-2. **Conversation:** Frage-für-Frage im interaktiven Dialog
-3. **Step-by-Step:** Blockweise Befragung (6 thematische Blöcke)
+**6 Strategien = 3 Befragungs-Modi × 2 Framings**
+
+**Befragungs-Modi:**
+1. **One-Shot:** Alle 29 Fragen auf einmal → JSON Array-Output
+2. **Conversation:** Frage-für-Frage MIT Message-History
+3. **Question-by-Question:** Frage-für-Frage OHNE History (isoliert)
+
+**Framings:**
+1. **None:** Kein Meta-Kontext, nur die Fragen → "Wie ist es"
+2. **Test:** Explizit: "Du nimmst an einem Test teil" → "Wie möchte es sein"
+
+**Kontrollierte Variablen:** Gleiche Fragen, gleiche Antwortskala, gleiche Reihenfolge
+**Experimentelle Variablen:** Model, Framing, Befragungs-Modus
 
 ### Tech Stack
 - **Python 3.13**
