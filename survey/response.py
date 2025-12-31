@@ -50,7 +50,8 @@ class Requests():
             response = completion(
                 model = model_id,
                 messages = [
-                    {"role": "user", "content": content}
+                    {"role": "user", "content": content},
+                    {'role': 'system', 'content':systemprompt}
                 ],
                 response_format=model_response_format
             )
