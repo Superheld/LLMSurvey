@@ -519,8 +519,13 @@ def get_primary_milieu(
             'primary_milieu': primary[0],
             'primary_probability': primary[1]['probability'],
             'primary_raw_score': primary[1]['raw_score'],
+            'secondary_milieu': '---',
+            'secondary_probability': '---',
+            'candidates': '---',
+            'probabilities': '---',
             'confidence': 'high',
-            'confidence_gap': confidence_gap
+            'confidence_gap': confidence_gap,
+            'note': '',
         }
     elif confidence_gap > 0.08:
         return {
@@ -529,17 +534,24 @@ def get_primary_milieu(
             'primary_probability': primary[1]['probability'],
             'secondary_milieu': secondary[0],
             'secondary_probability': secondary[1]['probability'],
+            'candidates': '---',
+            'probabilities': '---',
             'confidence': 'moderate',
-            'confidence_gap': confidence_gap
+            'confidence_gap': confidence_gap,
+            'note': '',
         }
     else:
         return {
             'type': 'boundary_case',
+            'primary_milieu': '---',
+            'primary_probability': '---',
+            'secondary_milieu': '---',
+            'secondary_probability': '---',
             'candidates': [primary[0], secondary[0]],
             'probabilities': [primary[1]['probability'], secondary[1]['probability']],
             'confidence': 'low',
             'confidence_gap': confidence_gap,
-            'note': 'Manual expert review recommended'
+            'note': 'Manual expert review recommended',
         }
 
 
