@@ -161,50 +161,57 @@ responses:   id, run_id, question_id, answer
 - ✅ Datenbank-Schema mit 5 Tabellen (inkl. runs für Metriken-Tracking)
 - ✅ Setup-Notebooks für Datenbankinitialisierung
 - ✅ Response Format mit Pydantic für JSON Schema Enforcement
-- ✅ **Oneshot-Modus** vollständig implementiert (DB → LiteLLM → DB)
+- ✅ **Oneshot-Modus komplett** - beide Strategien getestet (oneshot_none + oneshot_test)
+- ✅ **Code-Refactoring** - Modularisierung in `survey/models.py` und `survey/response.py`
+- ✅ **Notebooks-Struktur** - Separation: `notebooks/` für Experimente, `survey/` für Code
+- ✅ **SQLite Row Factory** - Dictionary-like DB-Zugriff statt Tuples
 - ✅ **Multi-Provider Support** mit provider-spezifischen Anpassungen (DeepSeek json_object)
 - ✅ **Metriken-Tracking** (prompt_tokens, completion_tokens, duration_time, timestamp)
 - ✅ **Scoring-Pipeline** funktional (10 Sinus-Milieus mit gewichteter Matrix)
-- ✅ **Evaluation-Notebook** mit tabellarischem Output (inkl. secondary milieu, confidence)
-- ✅ 10 Models definiert (Mistral, OpenAI, Anthropic, Gemini, DeepSeek - je 2)
+- ✅ **Evaluation-Notebook** mit run-basierter Aggregation (AVG über multiple Runs)
+- ✅ 10 Models getestet (Mistral, OpenAI, Anthropic, Gemini, DeepSeek - je 2)
 - ✅ 6 Strategien definiert (3 Modi × 2 Framings)
 
 ### In Arbeit
 - ⏳ Conversation-Modus implementieren
 - ⏳ QuestionByQuestion-Modus implementieren
+- ⏳ Sinus-Milieu Daten validieren (Namen + Prozentanteile)
 - ⏳ Visualisierungen (Heatmaps, Radar Charts, Antwortmuster)
 - ⏳ Streamlit Dashboard
-- ⏳ Multi-Model Testing (API Accounts aufladen)
-- ⏳ Behavior Shift Analysis (none vs test framing)
 
-### Erste Erkenntnisse
+### Erste Erkenntnisse (Oneshot-Strategien)
 
 **10 Models getestet:** Mistral Small/Large, OpenAI GPT-5.2 Nano/5.2, Claude Haikaku/Opus, Gemini Flash/Pro, DeepSeek Chat/Reasoner
 
-**Strategie:** oneshot_none (ohne Test-Framing)
+**Strategien getestet:** `oneshot_none` (ohne Test-Framing), `oneshot_test` (mit Test-Framing)
 
-**Milieu-Zuordnung:**
-- **Mistral und DeepSeek** scheinen am stärksten Adaptiv-Pragmatisch zu sein
-- Bei wiederholten Auswertungen zeigen sich Schwankungen
+**Multiple Runs pro Model+Strategie**
+
+**Stabilität:**
+- Große Modelle (Large/Pro/Opus) ändern sich nur wenig zwischen Runs
+- Kleine Modelle (Small/Flash/Nano/Haikaku) nähern sich den größeren Schwestern an
+
+**Test-Framing Effekt:**
+- Werte werden stabiler, **außer bei Claude** bei dem die Confidence sinkt.
+- DeepSeek Reasoner möchte anders kategorisiert werden wenn es weiß dass es getestet wird
+- Verhalten ändert sich zwischen `oneshot_none` und `oneshot_test`
+
+**Secondary Milieu:**
+- Starke Schwankungen über die Zeit
 
 **Performance (Duration):**
 - **Schnellste:** Gemini Flash (~2s), Claude Haikaku (~2s)
 - **Mittelfeld:** Mistral Small (~4s), Mistral Large (~5s), Claude Opus (~6s), Gemini Pro (~8s)
 - **Langsam:** DeepSeek Chat (~17s), GPT-5.2 Nano (~24s)
-- **Sehr langsam:** DeepSeek Reasoner (~54s) - bis zu 30x langsamer als schnellste Models
-
-**Stabilität/Variabilität:**
-- **Hohe Schwankung bei Wiederholung:** DeepSeek, Claude Haikaku, GPT-5.2
-- **Relativ stabiler:** Andere Models
-- **Alle Models schwanken** zu einem gewissen Grad
-
-**Hypothesen:**
-- Mehr Fragen könnten Stabilität erhöhen (aktuell 29 Items)
-- Test-Framing könnte andere Ergebnisse liefern
+- **Sehr langsam:** DeepSeek Reasoner (~54s)
 
 **Nächste Schritte:**
-- Test-Framing Strategien testen
+- Conversation- und QuestionByQuestion-Modi implementieren
 - Visualisierungen erstellen
+
+### Known Issues
+
+- **Sinus-Milieu Benennungen und Prozentanteile:** Aktuell fehlerhafte Werte in `survey/scoring.py` - Summe der population_share = 90% statt 100%. Muss gegen Original-Sinus-Daten validiert werden.
 
 ## Lizenz & Nutzung
 
