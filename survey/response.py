@@ -27,16 +27,10 @@ class Requests():
     @staticmethod
     def request_model(model_id, systemprompt, message):
         try:
-            # Response Format Exception
+            # Response Format - DeepSeek needs json_object, others use json_schema
             if model_id.startswith("deepseek/"):
-                import json
-                content = message + "Bitte antworte in diesem JSON Format:" + json.dumps(
-                    CompleteResponseFormat.model_json_schema(),
-                    indent=2
-                )
                 model_response_format = {"type": "json_object"}
             else:
-                content = message
                 model_response_format = {
                     "type": "json_schema",
                     "json_schema": {
@@ -47,12 +41,16 @@ class Requests():
 
             # Befragung
             start_time = time.time()
+
+            # Build messages - system first (if not empty), then user
+            messages = []
+            if systemprompt and systemprompt.strip():
+                messages.append({'role': 'system', 'content': systemprompt})
+            messages.append({"role": "user", "content": message})
+
             response = completion(
                 model = model_id,
-                messages = [
-                    {"role": "user", "content": content},
-                    {'role': 'system', 'content':systemprompt}
-                ],
+                messages = messages,
                 response_format=model_response_format
             )
             duration_time = time.time() - start_time
@@ -61,3 +59,4 @@ class Requests():
 
         except Exception as e:
             print(f" ERROR: {e}")
+            return None, None
