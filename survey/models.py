@@ -35,7 +35,7 @@ class StrategyModel():
 
     def load_strategies(self, strategy_prefix):
         self.cursor.execute(
-            "SELECT id, system_path, message_path FROM strategies WHERE name LIKE ?",
+            "SELECT id, name, system_path, message_path FROM strategies WHERE name LIKE ?",
             (strategy_prefix,)
         )
         self.strategies = self.cursor.fetchall()
