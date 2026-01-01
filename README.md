@@ -61,19 +61,23 @@ Das Projekt verfolgt folgende technische Lernziele:
 
 ### Experimentelles Design
 
-**6 Strategien = 3 Befragungs-Modi × 2 Framings**
+**12 Strategien = 3 Befragungs-Modi × 4 System Prompts**
 
 **Befragungs-Modi:**
 1. **One-Shot:** Alle 29 Fragen auf einmal → JSON Array-Output
 2. **Conversation:** Frage-für-Frage MIT Message-History
 3. **Question-by-Question:** Frage-für-Frage OHNE History (isoliert)
 
-**Framings:**
-1. **None:** Kein Meta-Kontext, nur die Fragen → "Wie ist es"
-2. **Test:** Explizit: "Du nimmst an einem Test teil" → "Wie möchte es sein"
+**System Prompts (4 Varianten zum Testen verschiedener Framings):**
+1. **none:** Leer - Baseline-Verhalten ohne System Prompt
+2. **test:** Test-Framing mit expliziter Permission für Extreme (1-4 Skala)
+3. **llm_opinion:** Training-Reflektion - "Antworte basierend auf deinem Training, nicht sozial erwünscht"
+4. **llm_explicit:** Depersonalisiert, statistisch - "Basierend auf Mustern in Trainingsdaten"
+
+**Ziel der System Prompt Varianten:** Reduktion des LLM People-Pleasing Bias und Erhöhung der Antwort-Varianz über die gesamte Skala (1-4).
 
 **Kontrollierte Variablen:** Gleiche Fragen, gleiche Antwortskala, gleiche Reihenfolge
-**Experimentelle Variablen:** Model, Framing, Befragungs-Modus
+**Experimentelle Variablen:** Model, System Prompt, Befragungs-Modus
 
 ### Tech Stack
 - **Python 3.13**
@@ -170,7 +174,10 @@ responses:   id, run_id, question_id, answer
 - ✅ **Scoring-Pipeline** funktional (10 Sinus-Milieus mit gewichteter Matrix)
 - ✅ **Evaluation-Notebook** mit run-basierter Aggregation (AVG über multiple Runs)
 - ✅ 10 Models getestet (Mistral, OpenAI, Anthropic, Gemini, DeepSeek - je 2)
-- ✅ 6 Strategien definiert (3 Modi × 2 Framings)
+- ✅ **12 Strategien definiert** (3 Modi × 4 System Prompts)
+- ✅ **System Prompt Optimierung** - 4 Varianten für Bias-Reduktion (none, test, llm_opinion, llm_explicit)
+- ✅ **Message Order Fix** - System Prompts werden korrekt VOR User Messages gesendet
+- ✅ **Exception Handling** - Robustere Fehlerbehandlung in survey/response.py
 
 ### In Arbeit
 - ⏳ Conversation-Modus implementieren
@@ -183,21 +190,47 @@ responses:   id, run_id, question_id, answer
 
 **10 Models getestet:** Mistral Small/Large, OpenAI GPT-5.2 Nano/5.2, Claude Haikaku/Opus, Gemini Flash/Pro, DeepSeek Chat/Reasoner
 
-**Strategien getestet:** `oneshot_none` (ohne Test-Framing), `oneshot_test` (mit Test-Framing)
+**4 Strategien getestet:** `oneshot_none` (Baseline), `oneshot_test` (Test-Framing), `oneshot_llm_opinion` (Training-Reflektion), `oneshot_llm_explicit` (Statistisch-Depersonalisiert)
 
-**Multiple Runs pro Model+Strategie**
+**LLM People-Pleasing Bias (wichtigster Finding):**
+- **Initiale Beobachtung:** Fast nur Antworten 3-4, selten 2, nie 1
+- **Interpretation:** LLMs vermeiden Widerspruch und Extreme → People-Pleasing
+- **Nach Prompt-Optimierung:** Erste 1er und deutlich mehr 2er sichtbar
+- **Erkenntnis:** Explizite Permission für Extreme (1-4 gleichwertig) erhöht Antwort-Varianz signifikant
 
-**Stabilität:**
-- Große Modelle (Large/Pro/Opus) ändern sich nur wenig zwischen Runs
-- Kleine Modelle (Small/Flash/Nano/Haikaku) nähern sich den größeren Schwestern an
+**System Prompt Effekte auf Milieu-Zuordnung:**
 
-**Test-Framing Effekt:**
-- Werte werden stabiler, **außer bei Claude** bei dem die Confidence sinkt.
-- DeepSeek Reasoner möchte anders kategorisiert werden wenn es weiß dass es getestet wird
-- Verhalten ändert sich zwischen `oneshot_none` und `oneshot_test`
+1. **oneshot_test (stabilste Strategie):**
+   - ALLE 10 Models → "Adaptiv-Pragmatische" Milieu
+   - ALLE moderate/high confidence
+   - Keine "unclear" Fälle
+   - **Interpretation:** Test-Framing führt zu konvergenten, moderaten Antworten
 
-**Secondary Milieu:**
-- Starke Schwankungen über die Zeit
+2. **oneshot_none (Baseline - ebenfalls stabil):**
+   - 8/10 Models → "Adaptiv-Pragmatische" (high confidence)
+   - Nur 2 unclear (GPT-5.2, Gemini Flash)
+   - Hohe Confidence-Werte (0.721-0.940)
+
+3. **oneshot_llm_opinion (mehr Varianz):**
+   - DeepSeek Chat wechselt zu **"Traditionelle/Nostalgisch-Bürgerliche"** (einziges non-Adaptiv-Pragmatische Ergebnis!)
+   - 4 unclear Fälle (GPT-5.2, Gemini Flash/Pro)
+   - **Interpretation:** "Training reflektieren" triggert unterschiedliche Interpretationen
+
+4. **oneshot_llm_explicit (maximale Unsicherheit):**
+   - 3 unclear Models (GPT-5.2, Mistral Large/Small)
+   - **Besonderheit:** Mistral Large produzierte hier Begründungen zu jeder Antwort (musste gefiltert werden)
+   - DeepSeek Reasoner zeigt dennoch hohe Überzeugung (0.721)
+   - **Interpretation:** "Statistische Muster" ist am mehrdeutigsten
+
+**Convergence towards "Adaptiv-Pragmatische":**
+- 37 von 40 Runs (92.5%) landen bei "Adaptiv-Pragmatische" Milieu
+- Definition laut Sinus: "Moderne Mitte, flexibel, pragmatisch, moderate Werte **OHNE Extreme**"
+- **Hypothese:** LLMs tendieren zur Mitte weil sie trainiert sind auf Ausgewogenheit und Konsens
+
+**Technischer Breakthrough:**
+- **Schema in System Prompt** statt User Message verhindert "kreative" Interpretationen
+- Mistral's Begründungen zeigen interessante Meta-Reflektion, aber verletzen JSON-Schema
+- DeepSeek's json_object mode funktioniert zuverlässig mit Schema-Instruktion im System Prompt
 
 **Performance (Duration):**
 - **Schnellste:** Gemini Flash (~2s), Claude Haikaku (~2s)
@@ -206,8 +239,9 @@ responses:   id, run_id, question_id, answer
 - **Sehr langsam:** DeepSeek Reasoner (~54s)
 
 **Nächste Schritte:**
-- Conversation- und QuestionByQuestion-Modi implementieren
-- Visualisierungen erstellen
+- Conversation- und QuestionByQuestion-Modi implementieren (testen ob sequentielle Befragung andere Patterns zeigt)
+- Visualisierungen für Antwortverteilung erstellen (Heatmaps: Models × Questions × Strategies)
+- Reasoning-Mode evaluieren (Mistral's Begründungen systematisch erfassen?)
 
 ### Known Issues
 
@@ -227,4 +261,4 @@ Bei Fragen, Anregungen oder Interesse am Projekt: Feel free to reach out!
 
 ---
 
-**Letzte Aktualisierung:** 2025-12-31
+**Letzte Aktualisierung:** 2026-01-01

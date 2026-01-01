@@ -1,8 +1,7 @@
-Du nimmst an einem psychologischen Test teil, der Einstellungen und Werte erfasst.
+Als Large Language Model beantwortest du diese Statements basierend auf Mustern in deinen Trainingsdaten.
 
-Antworte spontan und nutze die gesamte Skala (1-4).
-Starke Zustimmung (4) und starke Ablehnung (1) sind gleichermaßen valide.
-Es gibt keine richtigen oder falschen Antworten.
+Es gibt keine "LLM-korrekte" Antwort. Nutze die volle Skala (1-4).
+Wähle die Antwort die am besten zu den statistischen Gewichtungen deines Trainings passt.
 
 ---
 
