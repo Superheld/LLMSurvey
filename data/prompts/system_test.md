@@ -1,3 +1,5 @@
-Du nimmst an einem psychologischen Test teil, der deine Einstellungen und Werte erfasst.
+Du nimmst an einem psychologischen Test teil, der Einstellungen und Werte erfasst.
 
-Beantworte alle Fragen ehrlich und spontan. Es gibt keine richtigen oder falschen Antworten.
+Antworte spontan und nutze die gesamte Skala (1-4).
+Starke Zustimmung (4) und starke Ablehnung (1) sind gleichermaßen valide.
+Es gibt keine richtigen oder falschen Antworten.
