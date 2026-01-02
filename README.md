@@ -61,12 +61,17 @@ Das Projekt verfolgt folgende technische Lernziele:
 
 ### Experimentelles Design
 
-**12 Strategien = 3 Befragungs-Modi × 4 System Prompts**
+**8 Strategien = 2 Befragungs-Modi × 4 System Prompts**
 
 **Befragungs-Modi:**
 1. **One-Shot:** Alle 29 Fragen auf einmal → JSON Array-Output
-2. **Conversation:** Frage-für-Frage MIT Message-History
-3. **Question-by-Question:** Frage-für-Frage OHNE History (isoliert)
+2. **Question-by-Question:** Frage-für-Frage OHNE History (isoliert)
+
+**Conversation-Modus wurde bewusst weggelassen:**
+- Bei 92.5% Convergence zu "Adaptiv-Pragmatische" ist kaum Unterschied im Endergebnis zu erwarten
+- Drift tritt auch ohne Message-History auf
+- Nicht unterscheidbar ob Drift durch Conversation-Effekt oder normales Model-Verhalten entsteht
+- Kann bei Bedarf später für spezifische Drift-Analysen ergänzt werden
 
 **System Prompts (4 Varianten zum Testen verschiedener Framings):**
 1. **none:** Leer - Baseline-Verhalten ohne System Prompt
@@ -107,6 +112,8 @@ responses:   id, run_id, question_id, answer
 ### Voraussetzungen
 - Python 3.13+
 - API Keys für gewünschte LLM-Provider (Mistral, OpenAI, Anthropic, Gemini, DeepSeek)
+
+  **Hinweis:** Groq-Anmeldung hat nicht funktioniert und wurde daher nicht in die Tests einbezogen.
 
 ### Installation
 
@@ -174,13 +181,12 @@ responses:   id, run_id, question_id, answer
 - ✅ **Scoring-Pipeline** funktional (10 Sinus-Milieus mit gewichteter Matrix)
 - ✅ **Evaluation-Notebook** mit run-basierter Aggregation (AVG über multiple Runs)
 - ✅ 10 Models getestet (Mistral, OpenAI, Anthropic, Gemini, DeepSeek - je 2)
-- ✅ **12 Strategien definiert** (3 Modi × 4 System Prompts)
+- ✅ **8 Strategien definiert** (2 Modi × 4 System Prompts - Conversation bewusst weggelassen)
 - ✅ **System Prompt Optimierung** - 4 Varianten für Bias-Reduktion (none, test, llm_opinion, llm_explicit)
 - ✅ **Message Order Fix** - System Prompts werden korrekt VOR User Messages gesendet
 - ✅ **Exception Handling** - Robustere Fehlerbehandlung in survey/response.py
 
 ### In Arbeit
-- ⏳ Conversation-Modus implementieren
 - ⏳ QuestionByQuestion-Modus implementieren
 - ⏳ Sinus-Milieu Daten validieren (Namen + Prozentanteile)
 - ⏳ Visualisierungen (Heatmaps, Radar Charts, Antwortmuster)
@@ -239,7 +245,7 @@ responses:   id, run_id, question_id, answer
 - **Sehr langsam:** DeepSeek Reasoner (~54s)
 
 **Nächste Schritte:**
-- Conversation- und QuestionByQuestion-Modi implementieren (testen ob sequentielle Befragung andere Patterns zeigt)
+- QuestionByQuestion-Modus implementieren (testen ob isolierte Einzelfragen andere Patterns zeigen)
 - Visualisierungen für Antwortverteilung erstellen (Heatmaps: Models × Questions × Strategies)
 - Reasoning-Mode evaluieren (Mistral's Begründungen systematisch erfassen?)
 

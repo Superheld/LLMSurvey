@@ -22,7 +22,7 @@ class CompleteResponseFormat(BaseModel):
         description="Answers for all 29 questions in order"
     )
 
-class Requests():
+class Request():
 
     @staticmethod
     def request_model(model_id, systemprompt, message):
@@ -39,9 +39,6 @@ class Requests():
                     }
                 }
 
-            # Befragung
-            start_time = time.time()
-
             # Build messages - system first (if not empty), then user
             messages = []
             if systemprompt and systemprompt.strip():
@@ -53,9 +50,8 @@ class Requests():
                 messages = messages,
                 response_format=model_response_format
             )
-            duration_time = time.time() - start_time
 
-            return response, duration_time
+            return response
 
         except Exception as e:
             print(f" ERROR: {e}")
