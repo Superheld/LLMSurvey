@@ -74,12 +74,20 @@ class ResponseModel():
 
             # Antworten je nach typ validieren
             if type == 'COMPLETE':
+
                 parsed_response = CompleteResponseFormat.model_validate_json(response.choices[0].message.content)
+
+                # Antworten speichern
+                for item in parsed_response.answers:
+                    cursor.execute(
+                        "INSERT INTO responses (run_id, question_id, answer) VALUES (?,?,?)",
+                        (run_id, item.question, item.answer)
+                    )
+
             elif type == 'SINGLE':
                 parsed_response = SingleResponseFormat.model_validate_json(response.choices[0].message.content)
 
-            # Antworten speichern
-            for item in parsed_response.answers:
+                # Antworten speichern
                 cursor.execute(
                     "INSERT INTO responses (run_id, question_id, answer) VALUES (?,?,?)",
                     (run_id, item.question, item.answer)
