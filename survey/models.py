@@ -66,7 +66,7 @@ class ModelsModel():
 class ResponseModel():
 
     @staticmethod
-    def write_respone(run_id, response, type):
+    def write_respone(run_id, question_id, response, type):
 
         with get_connection() as connection:
 
@@ -90,7 +90,7 @@ class ResponseModel():
                 # Antworten speichern
                 cursor.execute(
                     "INSERT INTO responses (run_id, question_id, answer) VALUES (?,?,?)",
-                    (run_id, item.question, item.answer)
+                    (run_id, question_id, parsed_response.answer)
                 )
             
             connection.commit()
