@@ -22,26 +22,29 @@ class CompleteResponseFormat(BaseModel):
         description="Answers for all 29 questions in order"
     )
 
-class Requests():
+class Request():
 
     @staticmethod
-    def request_model(model_id, systemprompt, message):
-        try:
-            # Response Format - DeepSeek needs json_object, others use json_schema
-            if model_id.startswith("deepseek/"):
-                model_response_format = {"type": "json_object"}
-            else:
-                model_response_format = {
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "survey_response",
-                        "schema": CompleteResponseFormat.model_json_schema()
-                    }
+    def request_model(model_id, systemprompt, message, response_type):
+
+        if response_type == 'SINGLE':
+            response_format = SingleResponseFormat.model_json_schema()
+        elif response_type == 'COMPLETE':
+            response_format = CompleteResponseFormat.model_json_schema()
+
+        # Response Format - DeepSeek needs json_object, others use json_schema
+        if model_id.startswith("deepseek/"):
+            model_response_format = {"type": "json_object"}
+        else:
+            model_response_format = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "survey_response",
+                    "schema": response_format
                 }
+            }
 
-            # Befragung
-            start_time = time.time()
-
+        try:
             # Build messages - system first (if not empty), then user
             messages = []
             if systemprompt and systemprompt.strip():
@@ -53,9 +56,8 @@ class Requests():
                 messages = messages,
                 response_format=model_response_format
             )
-            duration_time = time.time() - start_time
 
-            return response, duration_time
+            return response
 
         except Exception as e:
             print(f" ERROR: {e}")

@@ -1,6 +1,6 @@
 import sqlite3
 from datetime import datetime
-from survey.response import CompleteResponseFormat
+from survey.request import CompleteResponseFormat, SingleResponseFormat
 
 
 def get_connection():
@@ -35,7 +35,7 @@ class StrategyModel():
 
     def load_strategies(self, strategy_prefix):
         self.cursor.execute(
-            "SELECT id, system_path, message_path FROM strategies WHERE name LIKE ?",
+            "SELECT id, name, system_path, message_path FROM strategies WHERE name LIKE ?",
             (strategy_prefix,)
         )
         self.strategies = self.cursor.fetchall()
@@ -66,26 +66,67 @@ class ModelsModel():
 class ResponseModel():
 
     @staticmethod
-    def write_respone(model_db_id, strategy_db_id, duration_time, response):
+    def write_respone(run_id, question_id, response, type):
 
-        connection = get_connection()
-        cursor = connection.cursor()
+        with get_connection() as connection:
 
-        cursor.execute(
-            "INSERT INTO runs (model_id, strategy_id, prompt_tokens, completion_tokens, duration_time, timestamp) VALUES (?,?,?,?,?,?)",
-            (model_db_id, strategy_db_id, response.usage.prompt_tokens, response.usage.completion_tokens, duration_time, datetime.now().isoformat())
-        )
-        run_id = cursor.lastrowid
+            cursor = connection.cursor()
 
-        # Antworten validieren
-        parsed_response = CompleteResponseFormat.model_validate_json(response.choices[0].message.content)
+            # Antworten je nach typ validieren
+            if type == 'COMPLETE':
 
-        # Antworten speichern
-        for item in parsed_response.answers:
+                parsed_response = CompleteResponseFormat.model_validate_json(response.choices[0].message.content)
+
+                # Antworten speichern
+                for item in parsed_response.answers:
+                    cursor.execute(
+                        "INSERT INTO responses (run_id, question_id, answer) VALUES (?,?,?)",
+                        (run_id, item.question, item.answer)
+                    )
+
+            elif type == 'SINGLE':
+                parsed_response = SingleResponseFormat.model_validate_json(response.choices[0].message.content)
+
+                # Antworten speichern
+                cursor.execute(
+                    "INSERT INTO responses (run_id, question_id, answer) VALUES (?,?,?)",
+                    (run_id, question_id, parsed_response.answer)
+                )
+            
+            connection.commit()
+
+
+class RunModel():
+    
+    @staticmethod
+    def write_run(model_db_id, strategy_db_id):
+
+        with get_connection() as connection:
+
+            cursor = connection.cursor()
+
+            # Run speichern
             cursor.execute(
-                "INSERT INTO responses (run_id, question_id, answer) VALUES (?,?,?)",
-                (run_id, item.question, item.answer)
+                "INSERT INTO runs (model_id, strategy_id, timestamp) VALUES (?,?,?)",
+                (model_db_id, strategy_db_id, datetime.now().isoformat())
             )
 
-        connection.commit()
-        connection.close()
+            run_id = cursor.lastrowid
+            connection.commit()
+
+            return run_id
+    
+    @staticmethod
+    def update_run(prompt_tokens, completion_tokens, duration_time, run_id):
+
+        with get_connection() as connection:
+
+            cursor = connection.cursor()
+
+            # Run speichern
+            cursor.execute(
+                "UPDATE runs SET prompt_tokens=?, completion_tokens=?, duration_time=? WHERE id=?",
+                (prompt_tokens, completion_tokens, duration_time, run_id)
+            )
+
+            connection.commit()

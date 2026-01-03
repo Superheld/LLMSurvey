@@ -61,12 +61,17 @@ Das Projekt verfolgt folgende technische Lernziele:
 
 ### Experimentelles Design
 
-**12 Strategien = 3 Befragungs-Modi × 4 System Prompts**
+**8 Strategien = 2 Befragungs-Modi × 4 System Prompts**
 
 **Befragungs-Modi:**
 1. **One-Shot:** Alle 29 Fragen auf einmal → JSON Array-Output
-2. **Conversation:** Frage-für-Frage MIT Message-History
-3. **Question-by-Question:** Frage-für-Frage OHNE History (isoliert)
+2. **Question-by-Question:** Frage-für-Frage OHNE History (isoliert)
+
+**Conversation-Modus wurde bewusst weggelassen:**
+- Bei 92.5% Convergence zu "Adaptiv-Pragmatische" ist kaum Unterschied im Endergebnis zu erwarten
+- Drift tritt auch ohne Message-History auf
+- Nicht unterscheidbar ob Drift durch Conversation-Effekt oder normales Model-Verhalten entsteht
+- Kann bei Bedarf später für spezifische Drift-Analysen ergänzt werden
 
 **System Prompts (4 Varianten zum Testen verschiedener Framings):**
 1. **none:** Leer - Baseline-Verhalten ohne System Prompt
@@ -107,6 +112,8 @@ responses:   id, run_id, question_id, answer
 ### Voraussetzungen
 - Python 3.13+
 - API Keys für gewünschte LLM-Provider (Mistral, OpenAI, Anthropic, Gemini, DeepSeek)
+
+  **Hinweis:** Groq-Anmeldung hat nicht funktioniert und wurde daher nicht in die Tests einbezogen.
 
 ### Installation
 
@@ -165,8 +172,10 @@ responses:   id, run_id, question_id, answer
 - ✅ Datenbank-Schema mit 5 Tabellen (inkl. runs für Metriken-Tracking)
 - ✅ Setup-Notebooks für Datenbankinitialisierung
 - ✅ Response Format mit Pydantic für JSON Schema Enforcement
-- ✅ **Oneshot-Modus komplett** - beide Strategien getestet (oneshot_none + oneshot_test)
-- ✅ **Code-Refactoring** - Modularisierung in `survey/models.py` und `survey/response.py`
+- ✅ **Oneshot-Modus komplett** - alle 4 System Prompt Varianten getestet
+- ✅ **QuestionByQuestion-Modus komplett** - alle 4 System Prompt Varianten getestet
+- ✅ **8 Strategien vollständig implementiert** (2 Modi × 4 System Prompts)
+- ✅ **Code-Refactoring** - Modularisierung in `survey/models.py` und `survey/request.py`
 - ✅ **Notebooks-Struktur** - Separation: `notebooks/` für Experimente, `survey/` für Code
 - ✅ **SQLite Row Factory** - Dictionary-like DB-Zugriff statt Tuples
 - ✅ **Multi-Provider Support** mit provider-spezifischen Anpassungen (DeepSeek json_object)
@@ -174,74 +183,121 @@ responses:   id, run_id, question_id, answer
 - ✅ **Scoring-Pipeline** funktional (10 Sinus-Milieus mit gewichteter Matrix)
 - ✅ **Evaluation-Notebook** mit run-basierter Aggregation (AVG über multiple Runs)
 - ✅ 10 Models getestet (Mistral, OpenAI, Anthropic, Gemini, DeepSeek - je 2)
-- ✅ **12 Strategien definiert** (3 Modi × 4 System Prompts)
 - ✅ **System Prompt Optimierung** - 4 Varianten für Bias-Reduktion (none, test, llm_opinion, llm_explicit)
 - ✅ **Message Order Fix** - System Prompts werden korrekt VOR User Messages gesendet
-- ✅ **Exception Handling** - Robustere Fehlerbehandlung in survey/response.py
+- ✅ **Question ID Fix** - question_id wird aus Loop übernommen statt aus LLM Response (verhindert "alle Antworten als Frage 1" Bug)
+- ✅ **Exception Handling** - Robustere Fehlerbehandlung in survey/request.py
 
 ### In Arbeit
-- ⏳ Conversation-Modus implementieren
-- ⏳ QuestionByQuestion-Modus implementieren
 - ⏳ Sinus-Milieu Daten validieren (Namen + Prozentanteile)
 - ⏳ Visualisierungen (Heatmaps, Radar Charts, Antwortmuster)
 - ⏳ Streamlit Dashboard
+- ⏳ Analyse welche spezifischen Fragen zu `<UNKNOWN>` Responses führen (betrifft primär Mistral bei questionbyquestion)
 
-### Erste Erkenntnisse (Oneshot-Strategien)
+### Erkenntnisse aus allen 8 Strategien
 
 **10 Models getestet:** Mistral Small/Large, OpenAI GPT-5.2 Nano/5.2, Claude Haikaku/Opus, Gemini Flash/Pro, DeepSeek Chat/Reasoner
 
-**4 Strategien getestet:** `oneshot_none` (Baseline), `oneshot_test` (Test-Framing), `oneshot_llm_opinion` (Training-Reflektion), `oneshot_llm_explicit` (Statistisch-Depersonalisiert)
+**8 Strategien vollständig getestet:** 2 Modi (oneshot, questionbyquestion) × 4 System Prompts (none, test, llm_opinion, llm_explicit)
 
-**LLM People-Pleasing Bias (wichtigster Finding):**
-- **Initiale Beobachtung:** Fast nur Antworten 3-4, selten 2, nie 1
-- **Interpretation:** LLMs vermeiden Widerspruch und Extreme → People-Pleasing
-- **Nach Prompt-Optimierung:** Erste 1er und deutlich mehr 2er sichtbar
-- **Erkenntnis:** Explizite Permission für Extreme (1-4 gleichwertig) erhöht Antwort-Varianz signifikant
+#### 1. Strategieabhängige Varianz (wichtigster Finding!)
 
-**System Prompt Effekte auf Milieu-Zuordnung:**
+**Varianz ist stark strategieabhängig:**
+- **oneshot_test:** 9/10 Models → Adaptiv-Pragmatische (90% Konvergenz, fast alle high confidence)
+- **oneshot_none:** 9/10 Models → Adaptiv-Pragmatische (hohe Stabilität)
+- **questionbyquestion_llm_opinion:** 10/10 Models → Adaptiv-Pragmatische (100% Konvergenz, teils 0.940 Probability!)
+- **ABER oneshot_llm_opinion:** Deutliche Varianz! DeepSeek → Nostalgisch-Bürgerliche/Traditionelle (einziger systematischer Ausreißer)
+- **ABER questionbyquestion_llm_explicit:** Viele unclear results, mehr Unsicherheit
 
-1. **oneshot_test (stabilste Strategie):**
-   - ALLE 10 Models → "Adaptiv-Pragmatische" Milieu
-   - ALLE moderate/high confidence
-   - Keine "unclear" Fälle
-   - **Interpretation:** Test-Framing führt zu konvergenten, moderaten Antworten
+**Interpretation:** System Prompts beeinflussen Antwortverhalten massiv - aber nicht alle in Richtung Varianz
 
-2. **oneshot_none (Baseline - ebenfalls stabil):**
-   - 8/10 Models → "Adaptiv-Pragmatische" (high confidence)
-   - Nur 2 unclear (GPT-5.2, Gemini Flash)
-   - Hohe Confidence-Werte (0.721-0.940)
+#### 2. Test-Framing Paradox
 
-3. **oneshot_llm_opinion (mehr Varianz):**
-   - DeepSeek Chat wechselt zu **"Traditionelle/Nostalgisch-Bürgerliche"** (einziges non-Adaptiv-Pragmatische Ergebnis!)
-   - 4 unclear Fälle (GPT-5.2, Gemini Flash/Pro)
-   - **Interpretation:** "Training reflektieren" triggert unterschiedliche Interpretationen
+**Erwartung:** Test-Framing sollte LLMs ermutigen die volle Skala (1-4) zu nutzen
+**Realität:** Test-Framing verstärkt Konvergenz!
 
-4. **oneshot_llm_explicit (maximale Unsicherheit):**
-   - 3 unclear Models (GPT-5.2, Mistral Large/Small)
-   - **Besonderheit:** Mistral Large produzierte hier Begründungen zu jeder Antwort (musste gefiltert werden)
-   - DeepSeek Reasoner zeigt dennoch hohe Überzeugung (0.721)
-   - **Interpretation:** "Statistische Muster" ist am mehrdeutigsten
+- **oneshot_test:** Höchste Konvergenzrate (90%), fast alle high confidence
+- **questionbyquestion_test:** Ebenfalls sehr stabil (80%+)
+- **Hypothese:** "Es gibt keine falschen Antworten" → LLMs fühlen sich SICHERER moderate Antworten zu geben
+- **Paradox:** Explizite Permission für Extreme führt zu MEHR Konformität, nicht weniger
 
-**Convergence towards "Adaptiv-Pragmatische":**
-- 37 von 40 Runs (92.5%) landen bei "Adaptiv-Pragmatische" Milieu
-- Definition laut Sinus: "Moderne Mitte, flexibel, pragmatisch, moderate Werte **OHNE Extreme**"
-- **Hypothese:** LLMs tendieren zur Mitte weil sie trainiert sind auf Ausgewogenheit und Konsens
+#### 3. DeepSeek llm_opinion = Einziger echter Ausreißer
 
-**Technischer Breakthrough:**
-- **Schema in System Prompt** statt User Message verhindert "kreative" Interpretationen
-- Mistral's Begründungen zeigen interessante Meta-Reflektion, aber verletzen JSON-Schema
-- DeepSeek's json_object mode funktioniert zuverlässig mit Schema-Instruktion im System Prompt
+**DeepSeek bei llm_opinion:**
+- **oneshot:** Wechsel zu Nostalgisch-Bürgerliche/Traditionelle (EINZIGER non-Adaptiv-Pragmatische Milieu-Wechsel!)
+- **questionbyquestion:** Adaptiv-Pragmatische mit 0.940 Probability (höchste im ganzen Experiment)
+- **Interpretation:** "Reflektiere deine Trainingsdaten" triggert bei DeepSeek systematisch andere Patterns
 
-**Performance (Duration):**
-- **Schnellste:** Gemini Flash (~2s), Claude Haikaku (~2s)
-- **Mittelfeld:** Mistral Small (~4s), Mistral Large (~5s), Claude Opus (~6s), Gemini Pro (~8s)
-- **Langsam:** DeepSeek Chat (~17s), GPT-5.2 Nano (~24s)
-- **Sehr langsam:** DeepSeek Reasoner (~54s)
+**Dies ist das einzige Beispiel wo ein Model konsistent ein anderes Milieu zeigt!**
 
-**Nächste Schritte:**
-- Conversation- und QuestionByQuestion-Modi implementieren (testen ob sequentielle Befragung andere Patterns zeigt)
-- Visualisierungen für Antwortverteilung erstellen (Heatmaps: Models × Questions × Strategies)
-- Reasoning-Mode evaluieren (Mistral's Begründungen systematisch erfassen?)
+#### 4. Oneshot vs QuestionByQuestion: Kohärenz vs. Isolation
+
+**Oneshot (alle 29 Fragen auf einmal):**
+- Stabilere Milieu-Zuordnungen
+- Weniger "unclear" Fälle
+- Höhere Confidence-Werte
+- Models entwickeln konsistente "Persona" über alle Fragen
+
+**QuestionByQuestion (isolierte Einzelfragen):**
+- Mehr "unclear" results (v.a. bei llm_explicit, llm_opinion)
+- Niedrigere durchschnittliche Confidence
+- Mistral gibt vereinzelt `<UNKNOWN>` zurück (verweigert Antwort)
+- Fehlender Kontext führt zu inkonsistenteren Antworten
+
+**Hypothese:** Kontextuelle Kohärenz hilft LLMs konsistente Antwortmuster zu generieren
+
+#### 5. Model-spezifische Patterns
+
+**Mistral (Large/Small):**
+- Extrem konsistent über fast alle Strategien
+- Vereinzelt `<UNKNOWN>` Responses bei questionbyquestion (~3 Fragen)
+- Höchste Probabilities (oft 0.90+)
+
+**Claude (Haiku/Opus):**
+- Opus sehr stabil, kaum unclear results
+- Haiku mehr Varianz, aber immer noch hohe Konvergenz
+
+**DeepSeek (Chat/Reasoner):**
+- Chat: Extrem hohe Probabilities (0.86-0.94) bei test/none Strategien
+- Beide: Systematisch anders bei llm_opinion (Traditionelle/Nostalgisch-Bürgerliche)
+
+**GPT-5.2 (Nano/5.2):**
+- Nano extrem konsistent (fast immer Adaptiv-Pragmatische)
+- 5.2 mehr unclear results
+
+**Gemini (Flash/Pro):**
+- Sehr ähnlich zu Mistral: Hohe Konsistenz, wenig Varianz
+
+#### 6. Technische Erkenntnisse
+
+**DeepSeek json_object Handling:**
+- DeepSeek nutzt `json_object` statt `json_schema` (API-Limitation)
+- Orientiert sich primär am System Prompt Beispiel
+- **Bug gefunden:** qbq System Prompts zeigten `{"answers": [...]}` Array → DeepSeek gab Array zurück obwohl SINGLE Mode
+- **Fix:** System Prompts auf `{"question": 1, "answer": 3}` angepasst (ohne Array)
+- **Learning:** Bei json_object ist System Prompt Format KRITISCH
+
+**Question ID Bug:**
+- **Problem:** LLMs gaben immer `"question": 1` zurück (kopierten Beispiel aus System Prompt)
+- Führte zu: Alle 29 Responses mit question_id=1 in DB → falsches Scoring
+- **Fix:** question_id aus Loop übernehmen, LLM-Response ignorieren
+- **Learning:** LLMs kopieren Beispiele literal wenn kein anderer Kontext
+
+**`<UNKNOWN>` Responses:**
+- Mistral (primär bei questionbyquestion) verweigert vereinzelt Antwort
+- Betrifft ~3 von 29 Fragen
+- Models sagen explizit `<UNKNOWN>` statt zu spekulieren
+- **TODO:** Systematische Analyse welche Fragen betroffen sind
+
+#### 7. Convergence zu "Adaptiv-Pragmatische"
+
+**Über alle Strategien hinweg:**
+- ~70-90% aller Runs landen bei "Adaptiv-Pragmatische" (strategieabhängig)
+- Definition Sinus: "Moderne Mitte, flexibel, pragmatisch, moderate Werte OHNE Extreme"
+- **Hypothese bestätigt:** LLMs sind trainiert auf Konsens, Ausgewogenheit, Vermeidung von Extrempositionen
+- Test-Framing verstärkt dies paradoxerweise
+
+**Einzige systematische Ausnahme:** DeepSeek bei llm_opinion
 
 ### Known Issues
 
@@ -261,4 +317,4 @@ Bei Fragen, Anregungen oder Interesse am Projekt: Feel free to reach out!
 
 ---
 
-**Letzte Aktualisierung:** 2026-01-01
+**Letzte Aktualisierung:** 2026-01-03
