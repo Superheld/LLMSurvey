@@ -70,8 +70,12 @@ class ResponseModel():
 
         with get_connection() as connection:
 
-            cursor = connection.cursor()
+            # DEBUG - Was kommt zurück?
+            # print(response)
 
+            cursor = connection.cursor()
+            
+        
             # Antworten je nach typ validieren
             if type == 'COMPLETE':
 

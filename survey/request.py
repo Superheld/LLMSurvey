@@ -60,5 +60,5 @@ class Request():
             return response
 
         except Exception as e:
-            print(f" ERROR: {e}")
-            return None, None
+            print(f"ERROR: {e}\nMessage: {messages}\nResponse: {response}")
+            return None
